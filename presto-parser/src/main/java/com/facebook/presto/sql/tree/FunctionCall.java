@@ -29,7 +29,7 @@ public class FunctionCall
     private final Optional<Expression> filter;
     private final Optional<OrderBy> orderBy;
     private final boolean distinct;
-    private final List<Expression> arguments;
+    private List<Expression> arguments;
 
     public FunctionCall(QualifiedName name, List<Expression> arguments)
     {
@@ -101,6 +101,10 @@ public class FunctionCall
     public boolean isDistinct()
     {
         return distinct;
+    }
+
+    public void setArguments(List<Expression> arguments){
+        this.arguments = arguments ;
     }
 
     public List<Expression> getArguments()

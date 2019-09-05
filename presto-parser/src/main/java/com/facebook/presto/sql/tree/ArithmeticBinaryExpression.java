@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 public class ArithmeticBinaryExpression
         extends Expression
 {
@@ -43,8 +45,8 @@ public class ArithmeticBinaryExpression
     }
 
     private final Operator operator;
-    private final Expression left;
-    private final Expression right;
+    private Expression left;
+    private Expression right;
 
     public ArithmeticBinaryExpression(Operator operator, Expression left, Expression right)
     {
@@ -69,9 +71,21 @@ public class ArithmeticBinaryExpression
         return operator;
     }
 
+    public void setLeft(Expression left)
+    {
+        requireNonNull(left, "left is null");
+        this.left = left ;
+    }
+
     public Expression getLeft()
     {
         return left;
+    }
+
+    public void setRight(Expression right)
+    {
+        requireNonNull(right, "right is null");
+        this.right = right ;
     }
 
     public Expression getRight()

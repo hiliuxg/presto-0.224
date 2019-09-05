@@ -27,15 +27,7 @@ import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.function.FunctionHandle;
 import com.facebook.presto.spi.function.FunctionMetadata;
 import com.facebook.presto.spi.function.OperatorType;
-import com.facebook.presto.spi.type.CharType;
-import com.facebook.presto.spi.type.DecimalParseResult;
-import com.facebook.presto.spi.type.Decimals;
-import com.facebook.presto.spi.type.FunctionType;
-import com.facebook.presto.spi.type.RowType;
-import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.type.TypeManager;
-import com.facebook.presto.spi.type.TypeSignatureParameter;
-import com.facebook.presto.spi.type.VarcharType;
+import com.facebook.presto.spi.type.*;
 import com.facebook.presto.sql.parser.SqlParser;
 import com.facebook.presto.sql.planner.TypeProvider;
 import com.facebook.presto.sql.tree.ArithmeticBinaryExpression;
@@ -97,14 +89,9 @@ import com.facebook.presto.sql.tree.TimestampLiteral;
 import com.facebook.presto.sql.tree.TryExpression;
 import com.facebook.presto.sql.tree.WhenClause;
 import com.facebook.presto.sql.tree.WindowFrame;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import io.airlift.slice.SliceUtf8;
-
 import javax.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -114,7 +101,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
-
 import static com.facebook.presto.SystemSessionProperties.isLegacyRowFieldOrdinalAccessEnabled;
 import static com.facebook.presto.metadata.CastType.CAST;
 import static com.facebook.presto.spi.function.OperatorType.SUBSCRIPT;
@@ -195,6 +181,7 @@ public class ExpressionAnalyzer
     private final Session session;
     private final List<Expression> parameters;
     private final WarningCollector warningCollector;
+    private final String VARCHAR_TRANSFORM = "DOUBLE" ;
 
     public ExpressionAnalyzer(
             FunctionManager functionManager,
@@ -488,8 +475,22 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitComparisonExpression(ComparisonExpression node, StackableAstVisitorContext<Context> context)
         {
+
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
+            Type left = process(node.getLeft(),context);
+            Type right = process(node.getRight(),context);
+
+            if(left instanceof VarcharType && TypeUtils.isNumericType(right))
+            {
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+            }
+            else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
+            {
+                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+            }
+
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
+
         }
 
         @Override
@@ -601,7 +602,6 @@ public class ExpressionAnalyzer
             switch (node.getSign()) {
                 case PLUS:
                     Type type = process(node.getValue(), context);
-
                     if (!type.equals(DOUBLE) && !type.equals(REAL) && !type.equals(BIGINT) && !type.equals(INTEGER) && !type.equals(SMALLINT) && !type.equals(TINYINT)) {
                         // TODO: figure out a type-agnostic way of dealing with this. Maybe add a special unary operator
                         // that types can chose to implement, or piggyback on the existence of the negation operator
@@ -618,7 +618,32 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitArithmeticBinary(ArithmeticBinaryExpression node, StackableAstVisitorContext<Context> context)
         {
+
+            OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
+
+            Type left = process(node.getLeft(),context);
+            Type right = process(node.getRight(),context);
+
+            if(left instanceof VarcharType && TypeUtils.isNumericType(right))
+            {
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+            }
+            else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
+            {
+                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+            }
+            else if (left instanceof VarcharType && right instanceof VarcharType)
+            {
+                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+            }
+            else if (TypeUtils.isIntegerType(left) && TypeUtils.isIntegerType(right) && operatorType == OperatorType.DIVIDE)
+            {
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+            }
+
             return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
+
         }
 
         @Override
@@ -828,6 +853,17 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitFunctionCall(FunctionCall node, StackableAstVisitorContext<Context> context)
         {
+
+            String funName = node.getName().toString().toLowerCase();
+            if (funName.equals("sum") || funName.equals("avg")){
+                Expression exp = node.getArguments().get(0);
+                Type argType = process(exp,context);
+                if (argType instanceof VarcharType) {
+                    exp = new Cast(exp,VARCHAR_TRANSFORM) ;
+                    node.setArguments(Lists.newArrayList(exp));
+                }
+            }
+
             if (node.getWindow().isPresent()) {
                 for (Expression expression : node.getWindow().get().getPartitionBy()) {
                     process(expression, context);
@@ -1056,17 +1092,31 @@ public class ExpressionAnalyzer
         protected Type visitInPredicate(InPredicate node, StackableAstVisitorContext<Context> context)
         {
             Expression value = node.getValue();
-            process(value, context);
+            Type left = process(value, context);
 
             Expression valueList = node.getValueList();
-            process(valueList, context);
+            Type right = process(valueList, context);
 
-            if (valueList instanceof InListExpression) {
-                InListExpression inListExpression = (InListExpression) valueList;
-
-                coerceToSingleType(context,
-                        "IN value and list items must be the same type: %s",
-                        ImmutableList.<Expression>builder().add(value).addAll(inListExpression.getValues()).build());
+            if (valueList instanceof InListExpression)
+            {
+                InListExpression inListExpression = (InListExpression)valueList;
+                List<Expression> expressions = inListExpression.getValues();
+                if ((TypeUtils.isNumericType(left) && right instanceof VarcharType)
+                        || TypeUtils.isNumericType(right) && left instanceof VarcharType)
+                {
+                    List<Expression> tmpList = Lists.newArrayListWithCapacity(expressions.size());
+                    for (Expression exp : expressions) {
+                        tmpList.add(new Cast(exp,VARCHAR_TRANSFORM));
+                    }
+                    inListExpression.setValues(tmpList);
+                    node.setValueList(inListExpression);
+                    node.setValue(new Cast(value,VARCHAR_TRANSFORM));
+                }
+                else{
+                    coerceToSingleType(context,
+                            "IN value and list items must be the same type: %s",
+                            ImmutableList.<Expression>builder().add(value).addAll(expressions).build());
+                }
             }
             else if (valueList instanceof SubqueryExpression) {
                 coerceToSingleType(context, node, "value and result of subquery must be of the same type for IN expression: %s vs %s", value, valueList);
@@ -1079,7 +1129,6 @@ public class ExpressionAnalyzer
         protected Type visitInListExpression(InListExpression node, StackableAstVisitorContext<Context> context)
         {
             Type type = coerceToSingleType(context, "All IN list values must be the same type: %s", node.getValues());
-
             setExpressionType(node, type);
             return type; // TODO: this really should a be relation type
         }

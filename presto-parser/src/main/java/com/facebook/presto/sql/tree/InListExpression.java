@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 public class InListExpression
         extends Expression
 {
-    private final List<Expression> values;
+    private List<Expression> values;
 
     public InListExpression(List<Expression> values)
     {
@@ -43,6 +43,10 @@ public class InListExpression
         requireNonNull(values, "values is null");
         checkArgument(!values.isEmpty(), "values cannot be empty");
         this.values = ImmutableList.copyOf(values);
+    }
+
+    public void setValues(List<Expression> values){
+        this.values = values;
     }
 
     public List<Expression> getValues()

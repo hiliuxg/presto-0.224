@@ -19,6 +19,8 @@ import com.facebook.presto.spi.block.BlockBuilder;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
+import java.util.regex.Pattern;
+
 import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 
 public final class TypeUtils
@@ -103,4 +105,26 @@ public final class TypeUtils
             throw new PrestoException(NOT_SUPPORTED, errorMsg);
         }
     }
+
+    public static boolean isNumericType(Type type)
+    {
+        return type instanceof TinyintType
+                || type instanceof SmallintType
+                || type instanceof IntegerType
+                || type instanceof RealType
+                || type instanceof BigintType
+                || type instanceof DoubleType
+                || type instanceof DecimalType;
+    }
+
+    public static boolean isIntegerType(Type type)
+    {
+        return type instanceof TinyintType
+                || type instanceof SmallintType
+                || type instanceof IntegerType
+                || type instanceof RealType
+                || type instanceof BigintType;
+    }
+
+
 }

@@ -861,7 +861,8 @@ public class ExpressionAnalyzer
                 Type argType = process(exp,context);
                 if (argType instanceof VarcharType) {
                     exp = new Cast(exp,VARCHAR_TRANSFORM) ;
-                    node.setArguments(Lists.newArrayList(exp));
+                    arguments = Lists.newArrayList(exp);
+                    node.setArguments(arguments);
                 }
             }
 

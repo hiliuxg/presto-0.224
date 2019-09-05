@@ -855,8 +855,9 @@ public class ExpressionAnalyzer
         {
 
             String funName = node.getName().toString().toLowerCase();
-            if (funName.equals("sum") || funName.equals("avg")){
-                Expression exp = node.getArguments().get(0);
+            List<Expression> arguments = node.getArguments();
+            if ((funName.equals("sum") || funName.equals("avg")) && arguments.size() == 1){
+                Expression exp = arguments.get(0);
                 Type argType = process(exp,context);
                 if (argType instanceof VarcharType) {
                     exp = new Cast(exp,VARCHAR_TRANSFORM) ;
@@ -908,7 +909,7 @@ public class ExpressionAnalyzer
             }
 
             ImmutableList.Builder<TypeSignatureProvider> argumentTypesBuilder = ImmutableList.builder();
-            for (Expression expression : node.getArguments()) {
+            for (Expression expression : arguments) {
                 if (expression instanceof LambdaExpression || expression instanceof BindExpression) {
                     argumentTypesBuilder.add(new TypeSignatureProvider(
                             types -> {

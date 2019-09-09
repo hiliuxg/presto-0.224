@@ -92,14 +92,7 @@ import com.facebook.presto.sql.tree.WindowFrame;
 import com.google.common.collect.*;
 import io.airlift.slice.SliceUtf8;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import static com.facebook.presto.SystemSessionProperties.isLegacyRowFieldOrdinalAccessEnabled;
 import static com.facebook.presto.metadata.CastType.CAST;
@@ -854,7 +847,7 @@ public class ExpressionAnalyzer
         protected Type visitFunctionCall(FunctionCall node, StackableAstVisitorContext<Context> context)
         {
 
-            String funName = node.getName().toString().toLowerCase();
+            String funName = node.getName().toString();
             List<Expression> arguments = node.getArguments();
             if ((funName.equals("sum") || funName.equals("avg")) && arguments.size() == 1){
                 Expression exp = arguments.get(0);
@@ -1106,7 +1099,7 @@ public class ExpressionAnalyzer
                 if ((TypeUtils.isNumericType(left) && right instanceof VarcharType)
                         || TypeUtils.isNumericType(right) && left instanceof VarcharType)
                 {
-                    List<Expression> tmpList = Lists.newArrayListWithCapacity(expressions.size());
+                    List<Expression> tmpList = new ArrayList<>(expressions.size());
                     for (Expression exp : expressions) {
                         tmpList.add(new Cast(exp,VARCHAR_TRANSFORM));
                     }

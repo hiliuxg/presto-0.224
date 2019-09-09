@@ -316,6 +316,24 @@ public final class StringFunctions
     }
 
     @Description("suffix starting at given index")
+    @ScalarFunction("substring")
+    @LiteralParameters("x")
+    @SqlType("char(x)")
+    public static Slice substring(@SqlType("char(x)") Slice utf8, @SqlType(StandardTypes.BIGINT) long start)
+    {
+        return substr(utf8, start);
+    }
+
+    @Description("suffix starting at given index")
+    @ScalarFunction("substring")
+    @LiteralParameters("x")
+    @SqlType("char(x)")
+    public static Slice substring(@SqlType("char(x)") Slice utf8, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
+    {
+        return substr(utf8, start,length);
+    }
+
+    @Description("suffix starting at given index")
     @ScalarFunction("substr")
     @LiteralParameters("x")
     @SqlType("char(x)")
@@ -639,6 +657,15 @@ public final class StringFunctions
     }
 
     @Description("converts the string to lower case")
+    @ScalarFunction("lcase")
+    @LiteralParameters("x")
+    @SqlType("char(x)")
+    public static Slice charLcase(@SqlType("char(x)") Slice slice)
+    {
+        return lower(slice);
+    }
+
+    @Description("converts the string to lower case")
     @ScalarFunction("lower")
     @LiteralParameters("x")
     @SqlType("char(x)")
@@ -661,6 +688,15 @@ public final class StringFunctions
     @LiteralParameters("x")
     @SqlType("char(x)")
     public static Slice charUpper(@SqlType("char(x)") Slice slice)
+    {
+        return upper(slice);
+    }
+
+    @Description("converts the string to upper case")
+    @ScalarFunction("ucase")
+    @LiteralParameters("x")
+    @SqlType("char(x)")
+    public static Slice charUcase(@SqlType("char(x)") Slice slice)
     {
         return upper(slice);
     }

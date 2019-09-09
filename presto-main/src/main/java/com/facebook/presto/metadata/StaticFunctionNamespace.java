@@ -62,79 +62,9 @@ import com.facebook.presto.operator.aggregation.VarianceAggregation;
 import com.facebook.presto.operator.aggregation.arrayagg.ArrayAggregationFunction;
 import com.facebook.presto.operator.aggregation.histogram.Histogram;
 import com.facebook.presto.operator.aggregation.multimapagg.MultimapAggregationFunction;
-import com.facebook.presto.operator.scalar.ArrayCardinalityFunction;
-import com.facebook.presto.operator.scalar.ArrayContains;
-import com.facebook.presto.operator.scalar.ArrayDistinctFromOperator;
-import com.facebook.presto.operator.scalar.ArrayDistinctFunction;
-import com.facebook.presto.operator.scalar.ArrayElementAtFunction;
-import com.facebook.presto.operator.scalar.ArrayEqualOperator;
-import com.facebook.presto.operator.scalar.ArrayExceptFunction;
-import com.facebook.presto.operator.scalar.ArrayFilterFunction;
-import com.facebook.presto.operator.scalar.ArrayFunctions;
-import com.facebook.presto.operator.scalar.ArrayGreaterThanOperator;
-import com.facebook.presto.operator.scalar.ArrayGreaterThanOrEqualOperator;
-import com.facebook.presto.operator.scalar.ArrayHashCodeOperator;
-import com.facebook.presto.operator.scalar.ArrayIndeterminateOperator;
-import com.facebook.presto.operator.scalar.ArrayIntersectFunction;
-import com.facebook.presto.operator.scalar.ArrayLessThanOperator;
-import com.facebook.presto.operator.scalar.ArrayLessThanOrEqualOperator;
-import com.facebook.presto.operator.scalar.ArrayMaxFunction;
-import com.facebook.presto.operator.scalar.ArrayMinFunction;
-import com.facebook.presto.operator.scalar.ArrayNgramsFunction;
-import com.facebook.presto.operator.scalar.ArrayNotEqualOperator;
-import com.facebook.presto.operator.scalar.ArrayPositionFunction;
-import com.facebook.presto.operator.scalar.ArrayRemoveFunction;
-import com.facebook.presto.operator.scalar.ArrayReverseFunction;
-import com.facebook.presto.operator.scalar.ArrayShuffleFunction;
-import com.facebook.presto.operator.scalar.ArraySliceFunction;
-import com.facebook.presto.operator.scalar.ArraySortComparatorFunction;
-import com.facebook.presto.operator.scalar.ArraySortFunction;
-import com.facebook.presto.operator.scalar.ArrayUnionFunction;
-import com.facebook.presto.operator.scalar.ArraysOverlapFunction;
-import com.facebook.presto.operator.scalar.BitwiseFunctions;
-import com.facebook.presto.operator.scalar.CharacterStringCasts;
-import com.facebook.presto.operator.scalar.ColorFunctions;
-import com.facebook.presto.operator.scalar.CombineHashFunction;
-import com.facebook.presto.operator.scalar.DataSizeFunctions;
-import com.facebook.presto.operator.scalar.DateTimeFunctions;
-import com.facebook.presto.operator.scalar.EmptyMapConstructor;
-import com.facebook.presto.operator.scalar.FailureFunction;
-import com.facebook.presto.operator.scalar.HmacFunctions;
-import com.facebook.presto.operator.scalar.HyperLogLogFunctions;
-import com.facebook.presto.operator.scalar.JoniRegexpCasts;
-import com.facebook.presto.operator.scalar.JoniRegexpFunctions;
-import com.facebook.presto.operator.scalar.JoniRegexpReplaceLambdaFunction;
-import com.facebook.presto.operator.scalar.JsonFunctions;
-import com.facebook.presto.operator.scalar.JsonOperators;
-import com.facebook.presto.operator.scalar.MapCardinalityFunction;
-import com.facebook.presto.operator.scalar.MapDistinctFromOperator;
-import com.facebook.presto.operator.scalar.MapEntriesFunction;
-import com.facebook.presto.operator.scalar.MapEqualOperator;
-import com.facebook.presto.operator.scalar.MapFromEntriesFunction;
-import com.facebook.presto.operator.scalar.MapIndeterminateOperator;
-import com.facebook.presto.operator.scalar.MapKeys;
-import com.facebook.presto.operator.scalar.MapNotEqualOperator;
-import com.facebook.presto.operator.scalar.MapSubscriptOperator;
-import com.facebook.presto.operator.scalar.MapValues;
-import com.facebook.presto.operator.scalar.MathFunctions;
+import com.facebook.presto.operator.scalar.*;
 import com.facebook.presto.operator.scalar.MathFunctions.LegacyLogFunction;
-import com.facebook.presto.operator.scalar.MultimapFromEntriesFunction;
-import com.facebook.presto.operator.scalar.QuantileDigestFunctions;
-import com.facebook.presto.operator.scalar.Re2JRegexpFunctions;
-import com.facebook.presto.operator.scalar.Re2JRegexpReplaceLambdaFunction;
-import com.facebook.presto.operator.scalar.RepeatFunction;
-import com.facebook.presto.operator.scalar.ScalarFunctionImplementation;
-import com.facebook.presto.operator.scalar.SequenceFunction;
-import com.facebook.presto.operator.scalar.SessionFunctions;
-import com.facebook.presto.operator.scalar.SplitToMapFunction;
-import com.facebook.presto.operator.scalar.SplitToMultimapFunction;
-import com.facebook.presto.operator.scalar.StringFunctions;
-import com.facebook.presto.operator.scalar.TryFunction;
-import com.facebook.presto.operator.scalar.TypeOfFunction;
-import com.facebook.presto.operator.scalar.UrlFunctions;
-import com.facebook.presto.operator.scalar.VarbinaryFunctions;
-import com.facebook.presto.operator.scalar.WilsonInterval;
-import com.facebook.presto.operator.scalar.WordStemFunction;
+import com.facebook.presto.operator.scalar.hive.*;
 import com.facebook.presto.operator.window.CumulativeDistributionFunction;
 import com.facebook.presto.operator.window.DenseRankFunction;
 import com.facebook.presto.operator.window.FirstValueFunction;
@@ -293,6 +223,7 @@ import static com.facebook.presto.operator.scalar.ScalarFunctionImplementation.N
 import static com.facebook.presto.operator.scalar.TryCastFunction.TRY_CAST;
 import static com.facebook.presto.operator.scalar.ZipFunction.ZIP_FUNCTIONS;
 import static com.facebook.presto.operator.scalar.ZipWithFunction.ZIP_WITH_FUNCTION;
+import static com.facebook.presto.operator.scalar.hive.HiveConcatWsFunction.CONCAT_WS;
 import static com.facebook.presto.operator.window.AggregateWindowFunction.supplier;
 import static com.facebook.presto.spi.StandardErrorCode.AMBIGUOUS_FUNCTION_CALL;
 import static com.facebook.presto.spi.StandardErrorCode.FUNCTION_IMPLEMENTATION_MISSING;
@@ -655,7 +586,16 @@ class StaticFunctionNamespace
                 .aggregate(BuildSetDigestAggregation.class)
                 .scalars(SetDigestFunctions.class)
                 .scalars(SetDigestOperators.class)
-                .scalars(WilsonInterval.class);
+                .scalars(WilsonInterval.class)
+                .function(CONCAT_WS)
+                .scalar(DateAddFunction.class)
+                .scalar(DateSubFunction.class)
+                .scalar(IsNotNullFunction.class)
+                .scalar(IsNullFunction.class)
+                .scalar(NvlFunction.class)
+                .scalars(HiveStringFunction.class)
+                .scalars(HiveDateFunction.class);
+                ;
 
         switch (featuresConfig.getRegexLibrary()) {
             case JONI:

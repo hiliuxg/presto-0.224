@@ -122,8 +122,18 @@ public final class TypeUtils
         return type instanceof TinyintType
                 || type instanceof SmallintType
                 || type instanceof IntegerType
-                || type instanceof RealType
                 || type instanceof BigintType;
+    }
+
+    public static boolean isFloatPointType(Type type)
+    {
+        return  type instanceof RealType
+                || type instanceof BigintType;
+    }
+
+    public static boolean isFixedPrecisionType(Type type)
+    {
+        return  type instanceof DecimalType ;
     }
 
 

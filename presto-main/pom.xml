@@ -405,6 +405,7 @@
                 <configuration>
                     <ignorePackages>
                         <ignorePackage>com.facebook.presto.testing.assertions</ignorePackage>
+                        <ignorePackage>com.facebook.presto.operator.scalar.hive</ignorePackage>
                     </ignorePackages>
                 </configuration>
             </plugin>

@@ -593,8 +593,8 @@ class StaticFunctionNamespace
                 .scalar(IsNotNullFunction.class)
                 .scalar(IsNullFunction.class)
                 .scalar(NvlFunction.class)
-                .scalars(HiveStringFunction.class)
-                .scalars(HiveDateFunction.class);
+                .scalars(HiveStringFunctions.class)
+                .scalars(HiveDateFunctions.class)
                 ;
 
         switch (featuresConfig.getRegexLibrary()) {

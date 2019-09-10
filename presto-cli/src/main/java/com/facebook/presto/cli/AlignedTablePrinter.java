@@ -82,7 +82,6 @@ public class AlignedTablePrinter
 
         if (!headerOutput) {
             headerOutput = true;
-
             for (int i = 0; i < columns; i++) {
                 if (i > 0) {
                     writer.append('|');
@@ -90,15 +89,7 @@ public class AlignedTablePrinter
                 String name = fieldNames.get(i);
                 writer.append(center(name, maxWidth[i], 1));
             }
-            writer.append('\n');
-
-            for (int i = 0; i < columns; i++) {
-                if (i > 0) {
-                    writer.append('+');
-                }
-                writer.append(repeat("-", maxWidth[i] + 2));
-            }
-            writer.append('\n');
+            writer.append('\n') ;
         }
 
         for (List<?> row : rows) {

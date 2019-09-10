@@ -475,11 +475,11 @@ public class ExpressionAnalyzer
 
             if(left instanceof VarcharType && TypeUtils.isNumericType(right))
             {
-                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+                node.setLeft(new Cast(node.getLeft(), right.getDisplayName()));
             }
             else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
             {
-                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+                node.setRight(new Cast(node.getRight(), left.getDisplayName()));
             }
 
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
@@ -612,31 +612,31 @@ public class ExpressionAnalyzer
         protected Type visitArithmeticBinary(ArithmeticBinaryExpression node, StackableAstVisitorContext<Context> context)
         {
 
-            OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
-
             Type left = process(node.getLeft(),context);
             Type right = process(node.getRight(),context);
 
-            if(left instanceof VarcharType && TypeUtils.isNumericType(right))
+            if(left instanceof VarcharType && TypeUtils.isIntegerType(right))
             {
-                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+                node.setLeft(new Cast(node.getLeft(), "bigint"));
             }
-            else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
+            else if(left instanceof VarcharType && TypeUtils.isFloatPointType(right))
             {
-                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+                node.setLeft(new Cast(node.getLeft(), "double"));
+            }
+            else if(right instanceof VarcharType && TypeUtils.isIntegerType(left))
+            {
+                node.setRight(new Cast(node.getRight(), "bigint"));
+            }
+            else if(right instanceof VarcharType && TypeUtils.isFloatPointType(left))
+            {
+                node.setRight(new Cast(node.getRight(), "double"));
             }
             else if (left instanceof VarcharType && right instanceof VarcharType)
             {
-                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
-                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
+                node.setRight(new Cast(node.getRight(), "double"));
+                node.setLeft(new Cast(node.getLeft(), "double"));
             }
-            else if (TypeUtils.isIntegerType(left) && TypeUtils.isIntegerType(right) && operatorType == OperatorType.DIVIDE)
-            {
-                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
-            }
-
             return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
-
         }
 
         @Override
@@ -1096,16 +1096,19 @@ public class ExpressionAnalyzer
             {
                 InListExpression inListExpression = (InListExpression)valueList;
                 List<Expression> expressions = inListExpression.getValues();
-                if ((TypeUtils.isNumericType(left) && right instanceof VarcharType)
-                        || TypeUtils.isNumericType(right) && left instanceof VarcharType)
+
+                if(left instanceof VarcharType && TypeUtils.isNumericType(right))
+                {
+                    node.setValue(new Cast(value,right.getDisplayName()));
+                }
+                else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
                 {
                     List<Expression> tmpList = new ArrayList<>(expressions.size());
                     for (Expression exp : expressions) {
-                        tmpList.add(new Cast(exp,VARCHAR_TRANSFORM));
+                        tmpList.add(new Cast(exp,left.getDisplayName()));
                     }
                     inListExpression.setValues(tmpList);
                     node.setValueList(inListExpression);
-                    node.setValue(new Cast(value,VARCHAR_TRANSFORM));
                 }
                 else{
                     coerceToSingleType(context,

@@ -26,6 +26,8 @@ import com.facebook.presto.spi.type.StandardTypes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.XxHash64;
 
+import java.util.regex.Pattern;
+
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_CAST_ARGUMENT;
 import static com.facebook.presto.spi.function.OperatorType.BETWEEN;
 import static com.facebook.presto.spi.function.OperatorType.CAST;
@@ -43,6 +45,8 @@ import static java.lang.String.format;
 
 public final class VarcharOperators
 {
+    private final static Pattern pattern = Pattern.compile("^[-+]?[\\d]+[.{1}][\\d]+$");
+
     private VarcharOperators()
     {
     }
@@ -147,6 +151,15 @@ public final class VarcharOperators
         return (b >= 'a') && (b <= 'z');
     }
 
+    private static String toIntegerVarchar(Slice slice)
+    {
+        String str = slice.toStringUtf8();
+        if (pattern.matcher(str).matches()){
+            str = str.substring(0,str.lastIndexOf("."));
+        }
+        return str ;
+    }
+
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.DOUBLE)
@@ -179,7 +192,7 @@ public final class VarcharOperators
     public static long castToBigint(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Long.parseLong(slice.toStringUtf8());
+            return Long.parseLong(toIntegerVarchar(slice));
         }
         catch (Exception e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to BIGINT", slice.toStringUtf8()));
@@ -192,7 +205,7 @@ public final class VarcharOperators
     public static long castToInteger(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Integer.parseInt(slice.toStringUtf8());
+            return Integer.parseInt(toIntegerVarchar(slice));
         }
         catch (Exception e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to INT", slice.toStringUtf8()));
@@ -205,7 +218,7 @@ public final class VarcharOperators
     public static long castToSmallint(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Short.parseShort(slice.toStringUtf8());
+            return Short.parseShort(toIntegerVarchar(slice));
         }
         catch (Exception e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to SMALLINT", slice.toStringUtf8()));
@@ -218,7 +231,7 @@ public final class VarcharOperators
     public static long castToTinyint(@SqlType("varchar(x)") Slice slice)
     {
         try {
-            return Byte.parseByte(slice.toStringUtf8());
+            return Byte.parseByte(toIntegerVarchar(slice));
         }
         catch (Exception e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to TINYINT", slice.toStringUtf8()));

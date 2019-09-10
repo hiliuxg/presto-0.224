@@ -40,6 +40,7 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -172,15 +173,32 @@ public class Console
         return "";
     }
 
+    private static String welcome(ClientSession session){
+        String[] arr = new String[]{"路是走出来的，不是等出来的，加油~",
+                                    "你的付出，时光都会懂，Fighting!!",
+                                   " 欢迎使用Presto，请尽情蹂躏我吧~",
+                                    "要相信，梦里能到达的地方，总有一天，脚步也能到达",
+                                    "请爱自己，忙的时候，也不要忘记抬头看看身边的风景",
+                                    "愿你成为自己喜欢的样子，Fight!!"
+                                    } ;
+        return "\n哈啰，" + session.getUser() + "，" + arr[new Random().nextInt(6)] + "\n\n";
+    }
+
     private static void runConsole(QueryRunner queryRunner, AtomicBoolean exiting)
     {
         try (TableNameCompleter tableNameCompleter = new TableNameCompleter(queryRunner);
                 LineReader reader = new LineReader(getHistory(), commandCompleter(), lowerCaseCommandCompleter(), tableNameCompleter)) {
             tableNameCompleter.populateCache();
             StringBuilder buffer = new StringBuilder();
+            boolean first = true ;
             while (!exiting.get()) {
+                String welcome = "" ;
+                if (first){
+                    welcome = welcome(queryRunner.getSession());
+                    first = false;
+                }
+                String  prompt = welcome + PROMPT_NAME ;
                 // read a line of input from user
-                String prompt = PROMPT_NAME;
                 String schema = queryRunner.getSession().getSchema();
                 if (schema != null) {
                     prompt += ":" + schema;

@@ -32,7 +32,7 @@ public final class Cast
 
     public Cast(Expression expression, String type)
     {
-        this(Optional.empty(), expression, type, true, false);
+        this(Optional.empty(), expression, type, false, false);
     }
 
     public Cast(Expression expression, String type, boolean safe)
@@ -47,7 +47,7 @@ public final class Cast
 
     public Cast(NodeLocation location, Expression expression, String type)
     {
-        this(Optional.of(location), expression, type, true, false);
+        this(Optional.of(location), expression, type, false, false);
     }
 
     public Cast(NodeLocation location, Expression expression, String type, boolean safe)

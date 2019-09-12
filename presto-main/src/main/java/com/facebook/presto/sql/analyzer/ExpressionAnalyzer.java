@@ -615,26 +615,18 @@ public class ExpressionAnalyzer
             Type left = process(node.getLeft(),context);
             Type right = process(node.getRight(),context);
 
-            if(left instanceof VarcharType && TypeUtils.isIntegerType(right))
+            if(left instanceof VarcharType && TypeUtils.isNumericType(right))
             {
-                node.setLeft(new Cast(node.getLeft(), "bigint"));
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
             }
-            else if(left instanceof VarcharType && TypeUtils.isFloatPointType(right))
+            else if(right instanceof VarcharType && TypeUtils.isNumericType(left))
             {
-                node.setLeft(new Cast(node.getLeft(), "double"));
-            }
-            else if(right instanceof VarcharType && TypeUtils.isIntegerType(left))
-            {
-                node.setRight(new Cast(node.getRight(), "bigint"));
-            }
-            else if(right instanceof VarcharType && TypeUtils.isFloatPointType(left))
-            {
-                node.setRight(new Cast(node.getRight(), "double"));
+                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
             }
             else if (left instanceof VarcharType && right instanceof VarcharType)
             {
-                node.setRight(new Cast(node.getRight(), "double"));
-                node.setLeft(new Cast(node.getLeft(), "double"));
+                node.setRight(new Cast(node.getRight(), VARCHAR_TRANSFORM));
+                node.setLeft(new Cast(node.getLeft(), VARCHAR_TRANSFORM));
             }
             return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
         }
@@ -847,13 +839,13 @@ public class ExpressionAnalyzer
         protected Type visitFunctionCall(FunctionCall node, StackableAstVisitorContext<Context> context)
         {
 
-            String funName = node.getName().toString();
             List<Expression> arguments = node.getArguments();
+            String funName = node.getName().toString();
             if ((funName.equals("sum") || funName.equals("avg")) && arguments.size() == 1){
                 Expression exp = arguments.get(0);
                 Type argType = process(exp,context);
                 if (argType instanceof VarcharType) {
-                    exp = new Cast(exp,VARCHAR_TRANSFORM) ;
+                    exp = new Cast(exp,VARCHAR_TRANSFORM);
                     arguments = Lists.newArrayList(exp);
                     node.setArguments(arguments);
                 }

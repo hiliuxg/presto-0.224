@@ -45,7 +45,7 @@ import static java.lang.String.format;
 
 public final class VarcharOperators
 {
-    private final static Pattern pattern = Pattern.compile("^[-+]?[\\d]+[.{1}][\\d]+$");
+    private final static Pattern pattern = Pattern.compile("^[-+]?[\\d]+[.]0+$");
 
     private VarcharOperators()
     {

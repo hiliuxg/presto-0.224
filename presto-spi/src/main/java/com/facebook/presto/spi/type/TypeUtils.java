@@ -128,13 +128,8 @@ public final class TypeUtils
     public static boolean isFloatPointType(Type type)
     {
         return  type instanceof RealType
-                || type instanceof BigintType;
+                || type instanceof BigintType
+                || type instanceof DecimalType ;
     }
-
-    public static boolean isFixedPrecisionType(Type type)
-    {
-        return  type instanceof DecimalType ;
-    }
-
 
 }

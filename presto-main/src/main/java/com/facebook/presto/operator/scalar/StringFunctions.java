@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.operator.scalar;
 
+import com.facebook.presto.operator.scalar.hive.SimpleDateFormatUtil;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -35,6 +36,7 @@ import io.airlift.slice.SliceUtf8;
 import io.airlift.slice.Slices;
 
 import java.text.Normalizer;
+import java.util.Date;
 import java.util.OptionalInt;
 
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
@@ -283,8 +285,11 @@ public final class StringFunctions
     @SqlType("varchar(x)")
     public static Slice substr(@SqlType("varchar(x)") Slice utf8, @SqlType(StandardTypes.BIGINT) long start)
     {
-        if ((start == 0) || utf8.length() == 0) {
+        if (utf8.length() == 0) {
             return Slices.EMPTY_SLICE;
+        }
+        if (start == 0) {
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "The second argument should bigger than 0");
         }
 
         int startCodePoint = Ints.saturatedCast(start);
@@ -313,6 +318,42 @@ public final class StringFunctions
         int indexEnd = utf8.length();
 
         return utf8.slice(indexStart, indexEnd - indexStart);
+    }
+
+    @Description("suffix starting at given index")
+    @ScalarFunction("substring")
+    @SqlType(StandardTypes.VARCHAR)
+    public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
+    {
+        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+        return substr(Slices.utf8Slice(date), start);
+    }
+
+    @Description("suffix starting at given index")
+    @ScalarFunction("substring")
+    @SqlType(StandardTypes.VARCHAR)
+    public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
+    {
+        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+        return substr(Slices.utf8Slice(date), start,length);
+    }
+
+    @Description("suffix starting at given index")
+    @ScalarFunction("substr")
+    @SqlType(StandardTypes.VARCHAR)
+    public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
+    {
+        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+        return substr(Slices.utf8Slice(date), start);
+    }
+
+    @Description("suffix starting at given index")
+    @ScalarFunction("substr")
+    @SqlType(StandardTypes.VARCHAR)
+    public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
+    {
+        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+        return substr(Slices.utf8Slice(date), start,length);
     }
 
     @Description("suffix starting at given index")
@@ -348,8 +389,11 @@ public final class StringFunctions
     @SqlType("varchar(x)")
     public static Slice substr(@SqlType("varchar(x)") Slice utf8, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
     {
-        if (start == 0 || (length <= 0) || (utf8.length() == 0)) {
+        if (utf8.length() == 0) {
             return Slices.EMPTY_SLICE;
+        }
+        if (start == 0) {
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "The second argument should bigger than 0");
         }
 
         int startCodePoint = Ints.saturatedCast(start);

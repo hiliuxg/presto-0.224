@@ -481,6 +481,14 @@ public class ExpressionAnalyzer
             {
                 node.setRight(new Cast(node.getRight(), left.getDisplayName()));
             }
+            else if(left instanceof VarcharType && right instanceof TimestampType)
+            {
+                node.setLeft(new Cast(node.getLeft(), "timestamp"));
+            }
+            else if(right instanceof VarcharType && left instanceof TimestampType)
+            {
+                node.setRight(new Cast(node.getRight(), "timestamp"));
+            }
 
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
 
@@ -1037,6 +1045,32 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitBetweenPredicate(BetweenPredicate node, StackableAstVisitorContext<Context> context)
         {
+
+            Type value = process(node.getValue(),context);
+            Type min = process(node.getMin(),context);
+            Type max = process(node.getMax(),context);
+
+            if (value instanceof VarcharType && TypeUtils.isNumericType(min)
+                    && TypeUtils.isNumericType(max) && min.getDisplayName().equals(max.getDisplayName()))
+            {
+                node.setValue(new Cast(node.getValue(),min.getDisplayName()));
+            }
+            else if (TypeUtils.isNumericType(value) && min instanceof VarcharType && max instanceof VarcharType)
+            {
+                node.setMax(new Cast(node.getMax(),value.getDisplayName()));
+                node.setMin(new Cast(node.getMin(),value.getDisplayName()));
+            }
+            else if (value instanceof VarcharType && min instanceof TimestampType && max instanceof TimestampType )
+            {
+                node.setValue(new Cast(node.getValue(),"timestamp"));
+            }
+
+            else if (value instanceof TimestampType && min instanceof VarcharType && max instanceof VarcharType )
+            {
+                node.setMin(new Cast(node.getMin(),"timestamp"));
+                node.setMax(new Cast(node.getMax(),"timestamp"));
+            }
+
             return getOperator(context, node, OperatorType.BETWEEN, node.getValue(), node.getMin(), node.getMax());
         }
 

@@ -216,10 +216,12 @@ public final class DecimalCasts
     public static long shortDecimalToBigint(long decimal, long precision, long scale, long tenToScale)
     {
         // this rounds the decimal value to the nearest integral value
-        if (decimal >= 0) {
-            return (decimal + tenToScale / 2) / tenToScale;
-        }
-        return -((-decimal + tenToScale / 2) / tenToScale);
+        //if (decimal >= 0) {
+            //return (decimal + tenToScale / 2) / tenToScale;
+            return decimal / tenToScale ;
+        //}
+        //return -((-decimal + tenToScale / 2) / tenToScale);
+
     }
 
     @UsedByGeneratedCode

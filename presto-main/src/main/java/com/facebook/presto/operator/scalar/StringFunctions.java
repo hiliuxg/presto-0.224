@@ -34,11 +34,9 @@ import io.airlift.slice.InvalidUtf8Exception;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceUtf8;
 import io.airlift.slice.Slices;
-
 import java.text.Normalizer;
 import java.util.Date;
 import java.util.OptionalInt;
-
 import static com.facebook.presto.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static com.facebook.presto.spi.type.Chars.padSpaces;
 import static com.facebook.presto.spi.type.Chars.trimTrailingSpaces;
@@ -56,6 +54,7 @@ import static io.airlift.slice.Slices.utf8Slice;
 import static java.lang.Character.MAX_CODE_POINT;
 import static java.lang.Character.SURROGATE;
 import static java.lang.Math.toIntExact;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Current implementation is based on code points from Unicode and does ignore grapheme cluster boundaries.
@@ -189,6 +188,16 @@ public final class StringFunctions
     public static Slice reverse(@SqlType("varchar(x)") Slice slice)
     {
         return SliceUtf8.reverse(slice);
+    }
+
+
+    @Description("returns index of first occurrence of a substring (or 0 if not found)")
+    @ScalarFunction("instr")
+    @LiteralParameters({"x", "y"})
+    @SqlType(StandardTypes.BIGINT)
+    public static long instr(@SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice substring)
+    {
+        return stringPositionFromStart(string, substring, 1);
     }
 
     @Description("returns index of first occurrence of a substring (or 0 if not found)")
@@ -325,8 +334,13 @@ public final class StringFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
     {
-        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
-        return substr(Slices.utf8Slice(date), start);
+        try {
+            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            return substr(Slices.utf8Slice(date), start);
+        }catch (Exception e){
+            return null ;
+        }
+
     }
 
     @Description("suffix starting at given index")
@@ -334,8 +348,12 @@ public final class StringFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
     {
-        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
-        return substr(Slices.utf8Slice(date), start,length);
+        try{
+            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            return substr(Slices.utf8Slice(date), start,length);
+        }catch (Exception e){
+            return null ;
+        }
     }
 
     @Description("suffix starting at given index")
@@ -343,8 +361,13 @@ public final class StringFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
     {
-        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
-        return substr(Slices.utf8Slice(date), start);
+        try{
+            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            return substr(Slices.utf8Slice(date), start);
+        }catch (Exception e) {
+            return null ;
+        }
+
     }
 
     @Description("suffix starting at given index")
@@ -352,8 +375,12 @@ public final class StringFunctions
     @SqlType(StandardTypes.VARCHAR)
     public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
     {
-        String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
-        return substr(Slices.utf8Slice(date), start,length);
+        try{
+            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            return substr(Slices.utf8Slice(date), start,length);
+        }catch (Exception e) {
+            return null ;
+        }
     }
 
     @Description("suffix starting at given index")

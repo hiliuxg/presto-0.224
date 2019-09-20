@@ -20,7 +20,6 @@ import com.facebook.presto.spi.type.StandardTypes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import java.util.Base64;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -52,7 +51,7 @@ public final class HiveStringFunctions {
     @ScalarFunction("md5")
     @Description("md5")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice md5(@SqlType(StandardTypes.VARCHAR) Slice slice) throws UnsupportedEncodingException {
+    public static Slice md5(@SqlType(StandardTypes.VARCHAR) Slice slice)  {
         md5.update(slice.toStringUtf8().getBytes());
         byte s[] = md5.digest();
         String result = "";
@@ -65,7 +64,7 @@ public final class HiveStringFunctions {
     @ScalarFunction("md532")
     @Description("md5")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice md532(@SqlType(StandardTypes.VARCHAR) Slice slice) throws UnsupportedEncodingException {
+    public static Slice md532(@SqlType(StandardTypes.VARCHAR) Slice slice) {
         return md5(slice) ;
     }
 

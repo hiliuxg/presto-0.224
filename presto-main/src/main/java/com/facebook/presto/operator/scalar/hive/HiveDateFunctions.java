@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.operator.scalar.hive;
 
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.function.Description;
 import com.facebook.presto.spi.function.ScalarFunction;
 import com.facebook.presto.spi.function.SqlNullable;
@@ -25,9 +26,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public final class HiveDateFunctions {
+import static com.facebook.presto.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 
-    private static final Calendar calendar = Calendar.getInstance();
+public final class HiveDateFunctions {
 
     private HiveDateFunctions(){}
 
@@ -37,10 +38,15 @@ public final class HiveDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long unixtime ,
                                      @SqlType(StandardTypes.VARCHAR) Slice format) {
-        calendar.setTimeInMillis(unixtime * 1000L);
-        String result = SimpleDateFormatUtil.find(format.toStringUtf8()).format(calendar.getTime()) ;
-        calendar.clear();
-        return Slices.utf8Slice(result) ;
+        try{
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(unixtime * 1000L);
+            String result = SimpleDateFormatUtil.find(format.toStringUtf8()).format(calendar.getTime()) ;
+            return Slices.utf8Slice(result) ;
+        }catch (Exception e){
+            return null ;
+        }
+
     }
 
     @ScalarFunction(value = "unix_timestamp" ,calledOnNullInput = true)
@@ -51,11 +57,15 @@ public final class HiveDateFunctions {
             "therefore prevents proper optimization of queries - this has been deprecated since 2.0 in favour of CURRENT_TIMESTAMP constant.")
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlNullable @SqlType(StandardTypes.VARCHAR) Slice date,
-                                     @SqlNullable @SqlType(StandardTypes.VARCHAR) Slice format) throws ParseException {
+                                     @SqlNullable @SqlType(StandardTypes.VARCHAR) Slice format) {
+        try{
+            SimpleDateFormat sf = SimpleDateFormatUtil.find(format == null ? "yyyy-MM-dd HH:mm:ss" : format.toStringUtf8());
+            Date curdate = date == null ? new Date() : sf.parse(date.toStringUtf8()) ;
+            return (curdate.getTime() / 1000);
+        }catch (Exception e){
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+date+" , "+format+"");
+        }
 
-        SimpleDateFormat sf = SimpleDateFormatUtil.find(format == null ? "yyyy-MM-dd HH:mm:ss" : format.toStringUtf8());
-        Date curdate = date == null ? new Date() : sf.parse(date.toStringUtf8()) ;
-        return (curdate.getTime() / 1000);
     }
 
     @ScalarFunction(value = "unix_timestamp" )
@@ -65,7 +75,7 @@ public final class HiveDateFunctions {
             "This function is not deterministic and its value is not fixed for the scope of a query execution, " +
             "therefore prevents proper optimization of queries - this has been deprecated since 2.0 in favour of CURRENT_TIMESTAMP constant.")
     @SqlType(StandardTypes.BIGINT)
-    public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice date) throws ParseException {
+    public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice date)  {
         return unixTimestamp(date,null);
     }
 
@@ -160,26 +170,36 @@ public final class HiveDateFunctions {
     @Description("Returns the week number of a timestamp string: weekofyear(\"1970-11-01 00:00:00\") = 44, " +
             "weekofyear(\"1970-11-01\") = 44.")
     @SqlType(StandardTypes.INTEGER)
-    public static long weekofyear(@SqlType(StandardTypes.VARCHAR) Slice date ) throws ParseException {
-        Date tdate = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(date.toStringUtf8());
-        calendar.setFirstDayOfWeek(Calendar.MONDAY);
-        calendar.setMinimalDaysInFirstWeek(4);
-        calendar.setTime(tdate);
-        int result = calendar.get(Calendar.WEEK_OF_YEAR);
-        calendar.clear();
-        return result;
+    public static long weekofyear(@SqlType(StandardTypes.VARCHAR) Slice date ) {
+        try{
+            Calendar calendar = Calendar.getInstance();
+            Date tdate = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(date.toStringUtf8());
+            calendar.setFirstDayOfWeek(Calendar.MONDAY);
+            calendar.setMinimalDaysInFirstWeek(4);
+            calendar.setTime(tdate);
+            int result = calendar.get(Calendar.WEEK_OF_YEAR);
+            return result;
+        }catch (Exception e){
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+date+" ");
+        }
+
     }
 
     @ScalarFunction("datediff")
     @Description("Returns the number of days from startdate to enddate: datediff('2009-03-01', '2009-02-27') = 2.")
     @SqlType(StandardTypes.INTEGER)
     public static long datediff(@SqlType(StandardTypes.VARCHAR) Slice endDate ,
-                                @SqlType(StandardTypes.VARCHAR) Slice startDate ) throws ParseException {
-        SimpleDateFormat sf = SimpleDateFormatUtil.find("yyyy-MM-dd");
-        Date end = sf.parse(endDate.toStringUtf8());
-        Date start = sf.parse(startDate.toStringUtf8());
-        long diffInMilliSeconds = end.getTime() - start.getTime();
-        return diffInMilliSeconds / (86400 * 1000);
+                                @SqlType(StandardTypes.VARCHAR) Slice startDate )  {
+        try{
+            SimpleDateFormat sf = SimpleDateFormatUtil.find("yyyy-MM-dd");
+            Date end = sf.parse(endDate.toStringUtf8());
+            Date start = sf.parse(startDate.toStringUtf8());
+            long diffInMilliSeconds = end.getTime() - start.getTime();
+            return diffInMilliSeconds / (86400 * 1000);
+        }catch (Exception e){
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+endDate+" , "+startDate+"");
+        }
+
     }
 
 
@@ -191,29 +211,37 @@ public final class HiveDateFunctions {
             "The default output format is 'yyyy-MM-dd'.")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice addMonths(@SqlType(StandardTypes.VARCHAR) Slice startDate ,
-                                  @SqlType(StandardTypes.BIGINT) long numMonths) throws ParseException {
-
-        SimpleDateFormat dateFormat =  SimpleDateFormatUtil.find("yyyy-MM-dd");
-        Date date = dateFormat.parse(startDate.toStringUtf8());
-        calendar.setTime(date);
-        calendar.add(Calendar.MONTH, ((Long)numMonths).intValue());
-        Slice result  = Slices.utf8Slice(dateFormat.format(calendar.getTime()));
-        calendar.clear();
-        return result ;
+                                  @SqlType(StandardTypes.BIGINT) long numMonths) {
+        try{
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat dateFormat =  SimpleDateFormatUtil.find("yyyy-MM-dd");
+            Date date = dateFormat.parse(startDate.toStringUtf8());
+            calendar.setTime(date);
+            calendar.add(Calendar.MONTH, ((Long)numMonths).intValue());
+            Slice result  = Slices.utf8Slice(dateFormat.format(calendar.getTime()));
+            return result ;
+        }catch (Exception e){
+            return null ;
+        }
     }
 
     @ScalarFunction("last_day")
     @Description("Returns the last day of the month which the date belongs to (as of Hive 1.1.0). " +
             "date is a string in the format 'yyyy-MM-dd HH:mm:ss' or 'yyyy-MM-dd'. The time part of date is ignored.")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice lastDay(@SqlType(StandardTypes.VARCHAR) Slice slice ) throws ParseException {
-        Date date = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8());
-        calendar.setTime(date);
-        int maxDd = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
-        calendar.set(Calendar.DAY_OF_MONTH, maxDd);
-        String lastDay = SimpleDateFormatUtil.find("yyyy-MM-dd").format(calendar.getTime());
-        calendar.clear();
-        return  Slices.utf8Slice(lastDay);
+    public static Slice lastDay(@SqlType(StandardTypes.VARCHAR) Slice slice ) {
+        try{
+            Calendar calendar = Calendar.getInstance();
+            Date date = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8());
+            calendar.setTime(date);
+            int maxDd = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+            calendar.set(Calendar.DAY_OF_MONTH, maxDd);
+            String lastDay = SimpleDateFormatUtil.find("yyyy-MM-dd").format(calendar.getTime());
+            return  Slices.utf8Slice(lastDay);
+        }catch (Exception e){
+            return null ;
+        }
+
     }
 
 }

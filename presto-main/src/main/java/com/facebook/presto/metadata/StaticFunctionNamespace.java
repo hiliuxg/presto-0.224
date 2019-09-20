@@ -596,6 +596,7 @@ class StaticFunctionNamespace
                 .scalar(NvlFunction.class)
                 .scalars(HiveStringFunctions.class)
                 .scalars(HiveDateFunctions.class)
+                .scalars(PmodFunctions.class)
                 ;
 
         switch (featuresConfig.getRegexLibrary()) {

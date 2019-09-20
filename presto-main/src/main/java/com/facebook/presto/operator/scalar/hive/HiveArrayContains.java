@@ -30,7 +30,7 @@ import static com.facebook.presto.util.Failures.internalError;
 @ScalarFunction("array_contains")
 public final class HiveArrayContains
 {
-    private HiveArrayContains() {}
+    private  HiveArrayContains() {}
 
     @TypeParameter("T")
     @SqlType(StandardTypes.BOOLEAN)

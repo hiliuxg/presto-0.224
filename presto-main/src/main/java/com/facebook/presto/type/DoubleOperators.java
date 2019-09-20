@@ -61,7 +61,6 @@ import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Math.toIntExact;
 import static java.lang.String.format;
 import static java.math.RoundingMode.FLOOR;
-import static java.math.RoundingMode.HALF_UP;
 
 public final class DoubleOperators
 {
@@ -231,7 +230,7 @@ public final class DoubleOperators
     public static long castToLong(@SqlType(StandardTypes.DOUBLE) double value)
     {
         try {
-            return DoubleMath.roundToLong(value, HALF_UP);
+            return DoubleMath.roundToLong(value, FLOOR);
         }
         catch (ArithmeticException e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Unable to cast %s to bigint", value), e);

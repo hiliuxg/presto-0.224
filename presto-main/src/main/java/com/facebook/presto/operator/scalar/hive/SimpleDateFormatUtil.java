@@ -17,43 +17,43 @@ import java.text.SimpleDateFormat;
 
 public class SimpleDateFormatUtil {
 
-    private static final SimpleDateFormat YEAR_FORMAT = new SimpleDateFormat("yyyy");
-    private static final SimpleDateFormat MONTH_FORMAT = new SimpleDateFormat("MM");
-    private static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("dd");
-    private static final SimpleDateFormat HOUR_FORMAT = new SimpleDateFormat("hh");
-    private static final SimpleDateFormat MINUTE_FORMAT = new SimpleDateFormat("mm");
-    private static final SimpleDateFormat SECOND_FORMAT = new SimpleDateFormat("ss");
+    private static final ThreadLocal<SimpleDateFormat> YEAR_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy"));
+    private static final ThreadLocal<SimpleDateFormat> MONTH_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("MM"));
+    private static final ThreadLocal<SimpleDateFormat> DAY_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("dd"));
+    private static final ThreadLocal<SimpleDateFormat> HOUR_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("hh"));
+    private static final ThreadLocal<SimpleDateFormat> MINUTE_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("mm"));
+    private static final ThreadLocal<SimpleDateFormat> SECOND_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("ss"));
 
-    private static final SimpleDateFormat YEAR_MONTH_FORMAT = new SimpleDateFormat("yyyy-MM");
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    private static final SimpleDateFormat DATE_HOUR_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH");
-    private static final SimpleDateFormat DATE_MINUTE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> YEAR_MONTH_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM"));
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd"));
+    private static final ThreadLocal<SimpleDateFormat> DATE_HOUR_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH"));
+    private static final ThreadLocal<SimpleDateFormat> DATE_MINUTE_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm"));
+    private static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
     public static SimpleDateFormat find(String format){
         switch (format){
             case "yyyy" :
-                return YEAR_FORMAT ;
+                return YEAR_FORMAT.get() ;
             case "MM" :
-                return MONTH_FORMAT ;
+                return MONTH_FORMAT.get() ;
             case "dd" :
-                return DAY_FORMAT ;
+                return DAY_FORMAT.get() ;
             case "hh" :
-                return HOUR_FORMAT ;
+                return HOUR_FORMAT.get() ;
             case "mm" :
-                return MINUTE_FORMAT ;
+                return MINUTE_FORMAT.get() ;
             case "ss" :
-                return SECOND_FORMAT ;
+                return SECOND_FORMAT.get() ;
             case "yyyy-MM" :
-                return YEAR_MONTH_FORMAT ;
+                return YEAR_MONTH_FORMAT.get() ;
             case "yyyy-MM-dd" :
-                return DATE_FORMAT ;
+                return DATE_FORMAT.get() ;
             case "yyyy-MM-dd HH" :
-                return DATE_HOUR_FORMAT ;
+                return DATE_HOUR_FORMAT.get() ;
             case "yyyy-MM-dd HH:mm" :
-                return DATE_MINUTE_FORMAT ;
+                return DATE_MINUTE_FORMAT.get() ;
             case "yyyy-MM-dd HH:mm:ss" :
-                return TIME_FORMAT ;
+                return TIME_FORMAT.get() ;
                 default:
                     return new SimpleDateFormat(format) ;
         }

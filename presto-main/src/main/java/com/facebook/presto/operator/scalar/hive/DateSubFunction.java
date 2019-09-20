@@ -20,8 +20,6 @@ import com.facebook.presto.spi.function.TypeParameter;
 import com.facebook.presto.spi.type.StandardTypes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -31,21 +29,22 @@ import java.util.Date;
         "the date can be 'yyyy-MM-dd' ")
 public final class DateSubFunction {
 
-    private static final SimpleDateFormat DATE_DEFAULT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    private static final Calendar calendar = Calendar.getInstance();
-
     private DateSubFunction(){}
 
     @TypeParameter("T")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice dateSub(@SqlType(StandardTypes.VARCHAR) Slice slice ,
-                                @SqlType("T") long days) throws ParseException {
-        Date date = DATE_DEFAULT_FORMAT.parse(slice.toStringUtf8()) ;
-        calendar.setTime(date);
-        calendar.add(Calendar.DAY_OF_MONTH, -((Long)days).intValue());
-        String result = DATE_DEFAULT_FORMAT.format(calendar.getTime()) ;
-        calendar.clear();
-        return Slices.utf8Slice(result) ;
+                                @SqlType("T") long days) {
+        try{
+            Calendar calendar = Calendar.getInstance();
+            Date date = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8()) ;
+            calendar.setTime(date);
+            calendar.add(Calendar.DAY_OF_MONTH, -((Long)days).intValue());
+            String result = SimpleDateFormatUtil.find("yyyy-MM-dd").format(calendar.getTime()) ;
+            return Slices.utf8Slice(result) ;
+        }catch (Exception e) {
+            return null ;
+        }
     }
 
 }

@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.operator.scalar.hive;
 
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.function.Description;
 import com.facebook.presto.spi.function.ScalarFunction;
 import com.facebook.presto.spi.function.SqlType;
@@ -22,6 +23,8 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import java.util.Calendar;
 import java.util.Date;
+
+import static com.facebook.presto.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 
 
 @ScalarFunction(value = "date_add")
@@ -37,13 +40,13 @@ public final class DateAddFunction {
                                 @SqlType("T") long days)  {
         try{
             Calendar calendar = Calendar.getInstance();
-            Date date = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8()) ;
+            Date date = HiveDateUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8()) ;
             calendar.setTime(date);
             calendar.add(Calendar.DAY_OF_MONTH, ((Long)days).intValue());
-            String result = SimpleDateFormatUtil.find("yyyy-MM-dd").format(calendar.getTime()) ;
+            String result = HiveDateUtil.find("yyyy-MM-dd").format(calendar.getTime()) ;
             return Slices.utf8Slice(result) ;
         }catch (Exception e) {
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "date_add error, argument["+slice.toStringUtf8()+" , "+days+"] , message["+e.getMessage()+"]");
         }
 
     }

@@ -13,7 +13,7 @@
  */
 package com.facebook.presto.operator.scalar;
 
-import com.facebook.presto.operator.scalar.hive.SimpleDateFormatUtil;
+import com.facebook.presto.operator.scalar.hive.HiveDateUtil;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -335,10 +335,10 @@ public final class StringFunctions
     public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
     {
         try {
-            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            String date = HiveDateUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
             return substr(Slices.utf8Slice(date), start);
         }catch (Exception e){
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "substring error, argument["+timestamp+" , "+start+"] , message["+e.getMessage()+"]");
         }
 
     }
@@ -349,10 +349,10 @@ public final class StringFunctions
     public static Slice substringFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
     {
         try{
-            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            String date = HiveDateUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
             return substr(Slices.utf8Slice(date), start,length);
         }catch (Exception e){
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "substring error, argument["+timestamp+" , "+start+","+length+"] , message["+e.getMessage()+"]");
         }
     }
 
@@ -362,10 +362,10 @@ public final class StringFunctions
     public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start)
     {
         try{
-            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            String date = HiveDateUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
             return substr(Slices.utf8Slice(date), start);
         }catch (Exception e) {
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "substr error, argument["+timestamp+" , "+start+" ] , message["+e.getMessage()+"]");
         }
 
     }
@@ -376,10 +376,10 @@ public final class StringFunctions
     public static Slice substrFromTimestamp(@SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType(StandardTypes.BIGINT) long start, @SqlType(StandardTypes.BIGINT) long length)
     {
         try{
-            String date = SimpleDateFormatUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
+            String date = HiveDateUtil.find("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp));
             return substr(Slices.utf8Slice(date), start,length);
         }catch (Exception e) {
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "substr error, argument["+timestamp+" , "+start+","+length+"] , message["+e.getMessage()+"]");
         }
     }
 

@@ -21,7 +21,8 @@ import com.facebook.presto.spi.function.SqlType;
 import com.facebook.presto.spi.type.StandardTypes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
-import java.text.ParseException;
+import org.joda.time.LocalDateTime;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -39,12 +40,12 @@ public final class HiveDateFunctions {
     public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long unixtime ,
                                      @SqlType(StandardTypes.VARCHAR) Slice format) {
         try{
-            Calendar calendar = Calendar.getInstance();
+            Calendar calendar = HiveDateUtil.getCalendar();
             calendar.setTimeInMillis(unixtime * 1000L);
-            String result = SimpleDateFormatUtil.find(format.toStringUtf8()).format(calendar.getTime()) ;
+            String result = HiveDateUtil.find(format.toStringUtf8()).format(calendar.getTime()) ;
             return Slices.utf8Slice(result) ;
         }catch (Exception e){
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "fromUnixtime error, argument["+unixtime+" , "+format.toStringUtf8()+"] , message["+e.getMessage()+"]");
         }
 
     }
@@ -59,11 +60,11 @@ public final class HiveDateFunctions {
     public static long unixTimestamp(@SqlNullable @SqlType(StandardTypes.VARCHAR) Slice date,
                                      @SqlNullable @SqlType(StandardTypes.VARCHAR) Slice format) {
         try{
-            SimpleDateFormat sf = SimpleDateFormatUtil.find(format == null ? "yyyy-MM-dd HH:mm:ss" : format.toStringUtf8());
+            SimpleDateFormat sf = HiveDateUtil.find(format == null ? "yyyy-MM-dd HH:mm:ss" : format.toStringUtf8());
             Date curdate = date == null ? new Date() : sf.parse(date.toStringUtf8()) ;
             return (curdate.getTime() / 1000);
         }catch (Exception e){
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+date+" , "+format+"");
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "unix_timestamp error, argument["+date.toStringUtf8()+" , "+format.toStringUtf8()+"] , message["+e.getMessage()+"]");
         }
 
     }
@@ -86,7 +87,7 @@ public final class HiveDateFunctions {
             "This function is not deterministic and its value is not fixed for the scope of a query execution, " +
             "therefore prevents proper optimization of queries - this has been deprecated since 2.0 in favour of CURRENT_TIMESTAMP constant.")
     @SqlType(StandardTypes.BIGINT)
-    public static long unixTimestamp() throws ParseException {
+    public static long unixTimestamp() {
         return unixTimestamp(null,null);
     }
 
@@ -172,15 +173,14 @@ public final class HiveDateFunctions {
     @SqlType(StandardTypes.INTEGER)
     public static long weekofyear(@SqlType(StandardTypes.VARCHAR) Slice date ) {
         try{
-            Calendar calendar = Calendar.getInstance();
-            Date tdate = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(date.toStringUtf8());
+            Date tdate = HiveDateUtil.find("yyyy-MM-dd").parse(date.toStringUtf8());
+            Calendar calendar = HiveDateUtil.getCalendar();
             calendar.setFirstDayOfWeek(Calendar.MONDAY);
             calendar.setMinimalDaysInFirstWeek(4);
             calendar.setTime(tdate);
-            int result = calendar.get(Calendar.WEEK_OF_YEAR);
-            return result;
+            return  calendar.get(Calendar.WEEK_OF_YEAR);
         }catch (Exception e){
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+date+" ");
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "weekofyear error, argument["+date.toStringUtf8()+"] , message["+e.getMessage()+"]");
         }
 
     }
@@ -191,13 +191,13 @@ public final class HiveDateFunctions {
     public static long datediff(@SqlType(StandardTypes.VARCHAR) Slice endDate ,
                                 @SqlType(StandardTypes.VARCHAR) Slice startDate )  {
         try{
-            SimpleDateFormat sf = SimpleDateFormatUtil.find("yyyy-MM-dd");
+            SimpleDateFormat sf = HiveDateUtil.find("yyyy-MM-dd");
             Date end = sf.parse(endDate.toStringUtf8());
             Date start = sf.parse(startDate.toStringUtf8());
             long diffInMilliSeconds = end.getTime() - start.getTime();
             return diffInMilliSeconds / (86400 * 1000);
         }catch (Exception e){
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, ""+e.getMessage()+" , "+endDate+" , "+startDate+"");
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "datediff error, argument["+endDate+","+startDate+"] , message["+e.getMessage()+"]");
         }
 
     }
@@ -213,15 +213,14 @@ public final class HiveDateFunctions {
     public static Slice addMonths(@SqlType(StandardTypes.VARCHAR) Slice startDate ,
                                   @SqlType(StandardTypes.BIGINT) long numMonths) {
         try{
-            Calendar calendar = Calendar.getInstance();
-            SimpleDateFormat dateFormat =  SimpleDateFormatUtil.find("yyyy-MM-dd");
+            SimpleDateFormat dateFormat = HiveDateUtil.find("yyyy-MM-dd");
             Date date = dateFormat.parse(startDate.toStringUtf8());
+            Calendar calendar = HiveDateUtil.getCalendar();
             calendar.setTime(date);
             calendar.add(Calendar.MONTH, ((Long)numMonths).intValue());
-            Slice result  = Slices.utf8Slice(dateFormat.format(calendar.getTime()));
-            return result ;
+            return  Slices.utf8Slice(dateFormat.format(calendar.getTime()));
         }catch (Exception e){
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "add_months error, argument["+startDate.toStringUtf8()+","+numMonths+"] , message["+e.getMessage()+"]");
         }
     }
 
@@ -231,15 +230,15 @@ public final class HiveDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice lastDay(@SqlType(StandardTypes.VARCHAR) Slice slice ) {
         try{
-            Calendar calendar = Calendar.getInstance();
-            Date date = SimpleDateFormatUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8());
+            Date date = HiveDateUtil.find("yyyy-MM-dd").parse(slice.toStringUtf8());
+            Calendar calendar = HiveDateUtil.getCalendar();
             calendar.setTime(date);
             int maxDd = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
             calendar.set(Calendar.DAY_OF_MONTH, maxDd);
-            String lastDay = SimpleDateFormatUtil.find("yyyy-MM-dd").format(calendar.getTime());
+            String lastDay = HiveDateUtil.find("yyyy-MM-dd").format(calendar.getTime());
             return  Slices.utf8Slice(lastDay);
         }catch (Exception e){
-            return null ;
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "last_day error, argument["+slice.toStringUtf8()+"] , message["+e.getMessage()+"]");
         }
 
     }

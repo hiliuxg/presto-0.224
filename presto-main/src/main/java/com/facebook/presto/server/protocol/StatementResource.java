@@ -60,9 +60,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map.Entry;
 import java.util.OptionalLong;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_ADDED_PREPARE;
 import static com.facebook.presto.client.PrestoHeaders.PRESTO_CLEAR_SESSION;
@@ -101,7 +104,6 @@ public class StatementResource
     private final BlockEncodingSerde blockEncodingSerde;
     private final BoundedExecutor responseExecutor;
     private final ScheduledExecutorService timeoutExecutor;
-
     private final ConcurrentMap<QueryId, Query> queries = new ConcurrentHashMap<>();
     private final ScheduledExecutorService queryPurger = newSingleThreadScheduledExecutor(threadsNamed("query-purger"));
 
@@ -140,6 +142,9 @@ public class StatementResource
             @Context HttpServletRequest servletRequest,
             @Context UriInfo uriInfo)
     {
+
+        statement = replaceStateMent(statement);
+
         createQueryRequests.update(1);
 
         if (isNullOrEmpty(statement)) {
@@ -170,6 +175,25 @@ public class StatementResource
         QueryResults queryResults = query.getNextResult(OptionalLong.empty(), uriInfo, proto, DEFAULT_TARGET_RESULT_SIZE);
         return toResponse(query, queryResults);
     }
+
+    private String replaceStateMent(String statement){
+
+        String reg = "\\s+fx_kudu[.]\\w+\\s*?" ;
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(statement);
+
+        TreeSet<String> matcherTables = new TreeSet<>() ;
+        while (matcher.find()){
+            matcherTables.add(matcher.group(0).trim()) ;
+        }
+
+        for (String matcherTable : matcherTables) {
+            statement = statement.replaceAll(matcherTable, " kudu_new." + matcherTable + " ") ;
+        }
+
+        return statement ;
+    }
+
 
     @GET
     @Path("{queryId}/{slug}/{token}")
